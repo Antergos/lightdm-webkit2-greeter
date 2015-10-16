@@ -26,9 +26,9 @@
 
 #include <config.h>
 
-static GtkWidget *web_view;
-static GtkWidget *window;
-static WebKitSettings *webkit_settings;
+static GtkWidget *web_view = NULL;
+static GtkWidget *window = NULL;
+static WebKitSettings *webkit_settings = NULL;
 
 /*
 static void
@@ -69,8 +69,9 @@ wm_window_filter(GdkXEvent *gxevent, GdkEvent *event, gpointer data) {
         int revert_to = RevertToNone;
 
         XGetInputFocus(xevent->xunmap.display, &xwin, &revert_to);
-        if (revert_to == RevertToNone)
-            gdk_window_lower(gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(window))));
+        if (revert_to == RevertToNone) {
+            gdk_window_lower(gdk_screen_get_root_window(gtk_window_get_screen(GTK_WINDOW(window))));
+        }
     }
 
     return GDK_FILTER_CONTINUE;
@@ -102,34 +103,39 @@ create_new_webkit_settings_object(void) {
 
 int
 main(int argc, char **argv) {
-    GdkScreen *screen;
+    GdkScreen *screen = NULL;
+    GdkWindow *root_window = NULL;
     GdkRectangle geometry;
     GKeyFile *keyfile;
     gchar *theme;
     GdkRGBA bg_color;
 
-    WebKitWebContext *context = webkit_web_context_get_default();
-    g_signal_connect(context,
-                     "initialize-web-extensions",
-                     G_CALLBACK(initialize_web_extensions_cb),
-                     NULL);
-
+    WebKitWebContext *context = NULL;
 
     signal(SIGTERM, sigterm_cb);
 
     gtk_init(&argc, &argv);
 
-    gdk_window_set_cursor(gdk_get_default_root_window(),
-                          gdk_cursor_new_for_display(gdk_display_get_default(), GDK_LEFT_PTR));
 
+    context = webkit_web_context_get_default();
+    g_signal_connect(context,
+                     "initialize-web-extensions",
+                     G_CALLBACK(initialize_web_extensions_cb),
+                     NULL);
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    screen = gtk_window_get_screen(GTK_WINDOW(window));
+    root_window = gdk_screen_get_root_window(screen);
+
+    gdk_window_set_cursor(root_window,
+                          gdk_cursor_new_for_display(gdk_screen_get_display(screen), GDK_LEFT_PTR));
 
     /* settings */
     keyfile = g_key_file_new();
     g_key_file_load_from_file(keyfile, "/etc/lightdm/lightdm-webkit2-greeter.conf", G_KEY_FILE_NONE, NULL);
     theme = g_key_file_get_string(keyfile, "greeter", "webkit-theme", NULL);
 
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    screen = gtk_window_get_screen(GTK_WINDOW(window));
+    
 
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gdk_screen_get_monitor_geometry(screen, gdk_screen_get_primary_monitor(screen), &geometry);
@@ -151,7 +157,6 @@ main(int argc, char **argv) {
     webkit_web_view_load_uri(WEBKIT_WEB_VIEW(web_view), g_strdup_printf("file://%s/%s/index.html", THEME_DIR, theme));
 
     /* There is no window manager, so we need to implement some of its functionality */
-    GdkWindow *root_window = gdk_get_default_root_window();
     gdk_window_set_events(root_window, gdk_window_get_events(root_window) | GDK_SUBSTRUCTURE_MASK);
     gdk_window_add_filter(root_window, wm_window_filter, NULL);
 
