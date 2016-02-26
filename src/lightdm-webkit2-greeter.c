@@ -165,31 +165,6 @@ message_received_cb(WebKitUserContentManager *manager,
 }
 
 
-static gboolean
-fade_timer_cb(gpointer data) {
-	gdouble opacity;
-	opacity = gtk_widget_get_opacity(web_view);
-	opacity -= 0.1;
-
-	if (opacity <= 0) {
-		gtk_main_quit();
-		return FALSE;
-	}
-
-	gtk_widget_set_opacity(web_view, opacity);
-
-	return TRUE;
-}
-
-
-static void
-quit_cb(void) {
-	// Fade out the greeter
-	g_timeout_add(40, (GSourceFunc) fade_timer_cb, NULL);
-
-}
-
-
 int
 main(int argc, char **argv) {
 	GdkScreen *screen;
@@ -215,6 +190,8 @@ main(int argc, char **argv) {
 	textdomain (GETTEXT_PACKAGE);
 
 	gtk_init(&argc, &argv);
+
+	g_unix_signal_add(SIGTERM, (GSourceFunc) gtk_main_quit, /* is_callback */ NULL);
 
 	/* Apply greeter settings from config file */
 	keyfile = g_key_file_new();
