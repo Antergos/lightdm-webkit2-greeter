@@ -187,7 +187,7 @@ class AntergosThemeUtils {
 	 * Get some values from `lightdm-webkit2-greeter.conf` and save them for later.
 	 */
 	init_config_values() {
-		var logo, user_image, debug, background_images, background_images_dir;
+		var logo, user_image, debug, background_images, background_images_dir, time_format;
 
 		if ( 'undefined' !== typeof( config ) ) {
 
@@ -195,6 +195,7 @@ class AntergosThemeUtils {
 			user_image = config.get_str( 'branding', 'user_image' ) || 'img/antergos-logo-user.png';
 			background_images_dir = config.get_str( 'branding', 'background_images' ) || '/usr/share/backgrounds';
 			debug = config.get_bool( 'greeter', 'debug_mode' ) || false;
+			time_format = config.get_str( 'greeter', 'time_format' ) || 'LT';
 
 			if ( background_images_dir ) {
 				background_images = greeterutil.dirlist( background_images_dir ) || [];
@@ -212,6 +213,7 @@ class AntergosThemeUtils {
 		this.user_image = user_image;
 		this.background_images = background_images;
 		this.background_images_dir = background_images_dir;
+		this.time_format = time_format;
 	}
 
 	is_not_empty( value ) {
@@ -593,8 +595,7 @@ class AntergosTheme {
 	 * Setup the clock widget.
 	 */
 	initialize_clock() {
-		var saved_format = _util.cache_get( 'clock', 'time_format' ),
-			format = (null !== saved_format) ? saved_format : 'LT';
+		var format = _util.time_format;
 
 		moment.locale( window.navigator.languages );
 		this.$clock.html( moment().format( format ) );
