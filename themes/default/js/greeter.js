@@ -870,6 +870,9 @@ class Theme {
 		$msg_container.html( $msg_container.html() + text );
 		$( '#collapseTwo .user-wrap2' ).hide();
 		this.$msg_area_container.show();
+		$msg_container
+			.find('.close')
+			.focus();
 	}
 
 	dismiss_message() {
